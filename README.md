@@ -10,7 +10,8 @@ streamscrobbler is mostly using urllib2, httplib and urlparse. So this need to b
 
 ### How to use it
 The class have around 3 fucntions you can use to get information from the stream. This will make it easier later with just one function to call.
-This is a example how i do it:
+
+in the example. remember to send in a array with stream id and such of a station to the worker function. And create a updatestatus function to save metadata to database.
 ```Python
 import sys
 import httplib2 as http
@@ -67,7 +68,7 @@ blocklist.append("The Hitz Channel")
 blocklist.append("Radio SRF 1")
 
 def worker(row):
-
+	## row is a row form a table, with station information like streamurl and stationid.
 	status = 0
 	songtitle = None
 	print "	Station: " + row[1]
@@ -128,6 +129,7 @@ def worker(row):
 		
 		if not any(s in song[0] for s in blocklist) and not any(s in song[1] for s in blocklist):
 			if song[0] != song[1] and song[0] != "" and song[1] != "" and song[0] != row[1] and song[1] != row[1]:
+				## updatestatus is a function to just save metadata to the database. no weird stuff there.
 				result = updateStatus(status, song[1], song[0], row[0])
 			else:
 				print "	empty artist or songtitle or metadata was stationname"
