@@ -1,27 +1,29 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+import httplib2 as http
+import httplib
 from urlparse import urlparse
 import urllib2
 class streamscrobbler:
-	def parse_headers(response):
+	def parse_headers(self, response):
 		headers = {}
 		int = 0
 		while True:
 			line = response.readline()
 			if line == '\r\n':
-				break # end of headers
+				break  # end of headers
 			if ':' in line:
 				key, value = line.split(':', 1)
 				headers[key] = value
 			if int == 12:
 				break;
-			int = int+1
+			int = int + 1
 		return headers
 	
 	
-	def checkWhatServer(address):
+	def checkWhatServer(self, address):
 		try:
-			status = urllib2.urlopen(address,timeout=2).getcode()
+			status = urllib2.urlopen(address, timeout=2).getcode()
 		except Exception:
 			return bool(0)
 			
@@ -29,13 +31,13 @@ class streamscrobbler:
 			request = urllib2.Request(address)
 			request.add_header('icy-metadata', 1)
 			try:
-				response = urllib2.urlopen(request,timeout=6)
+				response = urllib2.urlopen(request, timeout=6)
 				if "server" in response.headers:
 					shoutcast = response.headers['server']
 				elif "X-Powered-By" in response.headers:
 					shoutcast = response.headers['X-Powered-By']
 				else:
-					headers = parse_headers(response)
+					headers = self.parse_headers(response)
 					if "icy-notice1" in headers:
 						shoutcast = headers['icy-notice1']
 						if "This stream requires" in shoutcast:
@@ -51,9 +53,9 @@ class streamscrobbler:
 		return shoutcast;
 	
 	
-	def checkPLS(address):
+	def checkPLS(self, address):
 		try:
-			response = urllib2.urlopen(address,timeout=2)
+			response = urllib2.urlopen(address, timeout=2)
 			for line in response:
 				if line.startswith("File1="):
 					stream = line;
@@ -66,44 +68,45 @@ class streamscrobbler:
 		except Exception:
 			return bool(0)
 	
-	def shoutcastOldGet(address, itsOld):
-		station = shoutcast7htmlCheck(address)
+	def shoutcastOldGet(self, address, itsOld):
+		station = self.shoutcast7htmlCheck(address)
 		if station is False:
-			station = shoutcastCheck(address, itsOld)
+			station = self.shoutcastCheck(address, itsOld)
 		
 		return station;
 		
-	def shoutcast7htmlCheck(address):
+	def shoutcast7htmlCheck(self, address):
+		
 		o = urlparse(address)
-		stringurl = o.scheme+"://"+o.netloc+"/7.html"
+		stringurl = o.scheme + "://" + o.netloc + "/7.html"
 		user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
 		request = urllib2.Request(stringurl)
 		request.add_header('User-Agent', user_agent)
 		try:
-			response = urllib2.urlopen(request,timeout=2)
+			response = urllib2.urlopen(request, timeout=2)
 			for line in response:
-				line = StripTags(line)
+				line = self.stripTags(line)
 				lines = line.split(',', 7)
 				if len(lines) > 1:
 					response.close()
-					return {'song':lines[6],'bitrate':lines[5]}
+					return {'song':lines[6], 'bitrate':lines[5]}
 				else:
 					response.close()
 					return False
 			else:
 				response.close()
 		except Exception, err:
-			print "	Error 7.html"
+			print "	Error 7.html: " + err
 			return False
 	
 	
-	def shoutcastCheck(address, itsOld):
+	def shoutcastCheck(self, address, itsOld):
 		request = urllib2.Request(address)
 		try:
 			request.add_header('icy-metadata', 1)
-			response = urllib2.urlopen(request,timeout=5)
+			response = urllib2.urlopen(request, timeout=5)
 			if itsOld is not True:
-				headers = parse_headers(response)
+				headers = self.parse_headers(response)
 				bitrate = headers['icy-br']
 				icy_metaint_header = headers['icy-metaint']
 			else:
@@ -111,7 +114,7 @@ class streamscrobbler:
 				icy_metaint_header = response.headers.get('icy-metaint')
 			if icy_metaint_header is not None:
 				metaint = int(icy_metaint_header)
-				read_buffer = metaint+255
+				read_buffer = metaint + 255
 				content = response.read(read_buffer)
 				
 				start = "StreamTitle='"
@@ -123,10 +126,22 @@ class streamscrobbler:
 				title = re.sub("http://.*", "", title)
 				
 				response.close()
-				return {'song':title,'bitrate':bitrate}
+				return {'song':title, 'bitrate':bitrate}
 			else:
 				response.close()
 				print "No metaint"
 		except Exception, err:
 			print "	Error"
 			return False
+
+	def stripTags(self, text):
+         finished = 0
+         while not finished:
+             finished = 1
+             start = text.find("<")
+             if start >= 0:
+                 stop = text[start:].find(">")
+                 if stop >= 0:
+                     text = text[:start] + text[start + stop + 1:]
+                     finished = 0
+         return text

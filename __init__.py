@@ -1,0 +1,1 @@
+from streamscrobbler import *
