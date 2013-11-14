@@ -20,7 +20,7 @@ class streamscrobbler:
 			int = int + 1
 		return headers
 	
-	## this is the fucntion you should call with the url to get all data sorted as a object in the return
+	# this is the fucntion you should call with the url to get all data sorted as a object in the return
 	def getServerInfo(self, url):
 		status = 0
 		if url.endswith('.pls') or url.endswith('listen.pls?sid=1'):
@@ -52,7 +52,7 @@ class streamscrobbler:
 		else:
 			metadata = False;
 		
-		return {"status":status,"metadata":metadata}
+		return {"status":status, "metadata":metadata}
 	
 	
 	def checkWhatServer(self, address):
@@ -110,7 +110,6 @@ class streamscrobbler:
 		return station;
 		
 	def shoutcast7htmlCheck(self, address):
-		
 		o = urlparse(address)
 		stringurl = o.scheme + "://" + o.netloc + "/7.html"
 		user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
@@ -129,15 +128,15 @@ class streamscrobbler:
 					return False
 			else:
 				response.close()
-		except urllib2.HTTPError, e:
-	    	print '	Error 7.html, HTTPError = ' + str(e.code)
-	    	return False
-		except urllib2.URLError, e:
-			print "	Error 7.html, URLError: " + str(e.reason)
-			return False
-		except Exception, err:
-			print "	Error 7.html"
-			return False
+        except urllib2.HTTPError, e:
+            print '	Error 7.html, HTTPError = ' + str(e.code)
+            return False
+        except urllib2.URLError, e:
+            print "	Error 7.html, URLError: " + str(e.reason)
+            return False
+        except Exception, err:
+            print "	Error 7.html"
+            return False
 	
 	
 	def shoutcastCheck(self, address, itsOld):
@@ -170,15 +169,15 @@ class streamscrobbler:
 			else:
 				response.close()
 				print "No metaint"
-		except urllib2.HTTPError, e:
-	    	print '	Error, HTTPError = ' + str(e.code)
-	    	return False
-		except urllib2.URLError, e:
-			print "	Error, URLError: " + str(e.reason)
-			return False
-		except Exception, err:
-			print "	Error"
-			return False
+        except urllib2.HTTPError, e:
+            print '	Error, HTTPError = ' + str(e.code)
+            return False
+        except urllib2.URLError, e:
+            print "	Error, URLError: " + str(e.reason)
+            return False
+        except Exception, err:
+            print "	Error"
+            return False
 
 	def stripTags(self, text):
          finished = 0

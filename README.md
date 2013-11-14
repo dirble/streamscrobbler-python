@@ -18,7 +18,7 @@ streamscrobbler = streamscrobbler()
 
 ##streamurl can be a url directly to the stream or to a pls file. Support for m3u is coming soon.
 streamurl = "http://217.198.148.101:80/"
-stationinfo = getServerInfo(streamurl)
+stationinfo = streamscrobbler.getServerInfo(streamurl)
 ##metadata is the bitrate and current song
 metadata = stationinfo.get("metadata")
 ## status is the integer to tell if the server is up or down, 0 means down, 1 up, 2 means up but also got metadata.
