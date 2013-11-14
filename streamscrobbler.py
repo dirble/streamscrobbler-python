@@ -129,8 +129,14 @@ class streamscrobbler:
 					return False
 			else:
 				response.close()
+		except urllib2.HTTPError, e:
+	    	print '	Error 7.html, HTTPError = ' + str(e.code)
+	    	return False
+		except urllib2.URLError, e:
+			print "	Error 7.html, URLError: " + str(e.reason)
+			return False
 		except Exception, err:
-			print "	Error 7.html: " + err
+			print "	Error 7.html"
 			return False
 	
 	
@@ -164,6 +170,12 @@ class streamscrobbler:
 			else:
 				response.close()
 				print "No metaint"
+		except urllib2.HTTPError, e:
+	    	print '	Error, HTTPError = ' + str(e.code)
+	    	return False
+		except urllib2.URLError, e:
+			print "	Error, URLError: " + str(e.reason)
+			return False
 		except Exception, err:
 			print "	Error"
 			return False
