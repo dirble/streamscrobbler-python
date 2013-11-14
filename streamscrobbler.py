@@ -20,6 +20,40 @@ class streamscrobbler:
 			int = int + 1
 		return headers
 	
+	## this is the fucntion you should call with the url to get all data sorted as a object in the return
+	def getServerInfo(self, url):
+		status = 0
+		if url.endswith('.pls') or url.endswith('listen.pls?sid=1'):
+			address = self.checkPLS(url)
+		else:
+			address = url
+		if isinstance(address, str):
+			meta_interval = self.checkWhatServer(address)
+		else:
+			meta_interval = bool(0)
+		if isinstance(meta_interval, bool):
+			if meta_interval is True:
+				status = 1
+			else:
+				status = 0
+			metadata = False;
+		elif "SHOUTcast" in meta_interval:
+			status = 1
+			if "1.9" in meta_interval:
+				metadata = self.shoutcastOldGet(address, False);
+			else:
+				metadata = self.shoutcastCheck(address, False);
+		elif "Icecast" or "137" in meta_interval:
+			status = 1
+			metadata = self.shoutcastCheck(address, True);
+		elif "StreamMachine" in meta_interval:
+			status = 1
+			metadata = self.shoutcastCheck(address, True);
+		else:
+			metadata = False;
+		
+		return {"status":status,"metadata":metadata}
+	
 	
 	def checkWhatServer(self, address):
 		try:
