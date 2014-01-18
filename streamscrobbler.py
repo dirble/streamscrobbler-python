@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import httplib2 as http
 import httplib
+import re
 from urlparse import urlparse
 import urllib2
 class streamscrobbler:
@@ -144,6 +145,7 @@ class streamscrobbler:
         try:
             request.add_header('icy-metadata', 1)
             response = urllib2.urlopen(request, timeout=5)
+            
             if itsOld is not True:
                 headers = self.parse_headers(response)
                 bitrate = headers['icy-br']
@@ -176,7 +178,7 @@ class streamscrobbler:
             print "    Error, URLError: " + str(e.reason)
             return False
         except Exception, err:
-            print "    Error"
+            print "    Error: " +str(err)
             return False
 
     def stripTags(self, text):
