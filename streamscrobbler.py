@@ -4,6 +4,7 @@ import httplib2 as http
 import httplib
 import re
 from urlparse import urlparse
+import pprint
 import urllib2
 class streamscrobbler:
     def parse_headers(self, response):
@@ -61,9 +62,11 @@ class streamscrobbler:
             status = urllib2.urlopen(address, timeout=2).getcode()
         except Exception:
             return bool(0)
-            
+        
         if status == 200:
             request = urllib2.Request(address)
+            user_agent = 'iTunes/9.1.1'
+            request.add_header('User-Agent', user_agent)
             request.add_header('icy-metadata', 1)
             try:
                 response = urllib2.urlopen(request, timeout=6)
@@ -84,7 +87,7 @@ class streamscrobbler:
                 return bool(1)
         else:
             shoutcast = bool(0);
-            
+        
         return shoutcast;
     
     
@@ -94,7 +97,7 @@ class streamscrobbler:
             for line in response:
                 if line.startswith("File1="):
                     stream = line;
-                
+            
             response.close()
             if 'stream' in locals():
                 return stream[6:]
@@ -107,15 +110,18 @@ class streamscrobbler:
         station = self.shoutcast7htmlCheck(address)
         if station is False:
             station = self.shoutcastCheck(address, itsOld)
+        else:
+            station = self.justgetcontenttype(address, station)
         
         return station;
-        
+    
     def shoutcast7htmlCheck(self, address):
         o = urlparse(address)
         stringurl = o.scheme + "://" + o.netloc + "/7.html"
         user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
         request = urllib2.Request(stringurl)
         request.add_header('User-Agent', user_agent)
+        request.add_header('Accept-Charset', 'utf-8')
         try:
             response = urllib2.urlopen(request, timeout=2)
             for line in response:
@@ -139,20 +145,65 @@ class streamscrobbler:
             print "    Error 7.html"
             return False
     
+    def justgetcontenttype(self, address, station):
+        request = urllib2.Request(address)
+        try:
+            user_agent = 'iTunes/9.1.1'
+            request.add_header('User-Agent', user_agent)
+            request.add_header('icy-metadata', 1)
+            request.add_header('Accept-Charset', 'utf-8')
+            response = urllib2.urlopen(request, timeout=5)
+            
+            contenttype = "?" 
+            
+            headers = self.parse_headers(response)
+            if "Content-Type" in headers:
+                contenttype = headers['Content-Type']
+            elif 'content-type' in headers:
+                contenttype = headers['content-type']
+                
+            response.close()
+            
+            return {'song':station.get("song"), 'bitrate':station.get("bitrate"), 'contenttype':contenttype}
+        except urllib2.HTTPError, e:
+            print '    Error, HTTPError = ' + str(e.code)
+            return False
+        except urllib2.URLError, e:
+            print "    Error, URLError: " + str(e.reason)
+            return False
+        except Exception, err:
+            print "    Error: " +str(err)
+            return False
+        
     
     def shoutcastCheck(self, address, itsOld):
         request = urllib2.Request(address)
         try:
+            user_agent = 'iTunes/9.1.1'
+            request.add_header('User-Agent', user_agent)
             request.add_header('icy-metadata', 1)
+            request.add_header('Accept-Charset', 'utf-8')
             response = urllib2.urlopen(request, timeout=5)
             
             if itsOld is not True:
                 headers = self.parse_headers(response)
                 bitrate = headers['icy-br']
                 icy_metaint_header = headers['icy-metaint']
+                if "Content-Type" in headers:
+                    contenttype = headers['Content-Type']
+                elif 'content-type' in headers:
+                    contenttype = headers['content-type']
             else:
                 bitrate = response.headers.get('icy-br').split(",")[0]
                 icy_metaint_header = response.headers.get('icy-metaint')
+                
+            if response.headers.get('Content-Type') is not None:
+                contenttype = response.headers.get('Content-Type')
+            elif response.headers.get('content-type') is not None:
+                contenttype = response.headers.get('content-type')
+            
+            print response.headers
+
             if icy_metaint_header is not None:
                 metaint = int(icy_metaint_header)
                 read_buffer = metaint + 255
@@ -167,7 +218,7 @@ class streamscrobbler:
                 title = re.sub("http://.*", "", title)
                 
                 response.close()
-                return {'song':title, 'bitrate':bitrate}
+                return {'song':title, 'bitrate':bitrate, 'contenttype':contenttype}
             else:
                 response.close()
                 print "No metaint"
@@ -182,13 +233,13 @@ class streamscrobbler:
             return False
 
     def stripTags(self, text):
-         finished = 0
-         while not finished:
-             finished = 1
-             start = text.find("<")
-             if start >= 0:
-                 stop = text[start:].find(">")
-                 if stop >= 0:
-                     text = text[:start] + text[start + stop + 1:]
-                     finished = 0
-         return text
+        finished = 0
+        while not finished:
+            finished = 1
+            start = text.find("<")
+            if start >= 0:
+                stop = text[start:].find(">")
+                if stop >= 0:
+                    text = text[:start] + text[start + stop + 1:]
+                    finished = 0
+        return text
