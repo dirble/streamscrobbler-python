@@ -84,7 +84,7 @@ class streamscrobbler:
                 metadata = self.shoutcastCheck(response, True)
             else:
                 metadata = False
-
+            response.close()
             return {"status": status, "metadata": metadata}
 
         except urllib2.HTTPError, e:
@@ -117,17 +117,31 @@ class streamscrobbler:
 
 
     def shoutcastCheck(self, response, itsOld):
+        headers = response.info().dict
         if itsOld is not True:
-            headers = self.parse_headers(response)
-            bitrate = headers['icy-br']
-            icy_metaint_header = headers['icy-metaint']
+            if 'icy-br' in headers:
+                bitrate = headers['icy-br']
+            else:
+                bitrate = None
+
+            if 'icy-metaint' in headers:
+                icy_metaint_header = headers['icy-metaint']
+            else:
+                icy_metaint_header = None
+
             if "Content-Type" in headers:
                 contenttype = headers['Content-Type']
             elif 'content-type' in headers:
                 contenttype = headers['content-type']
         else:
-            bitrate = response.headers.get('icy-br').split(",")[0]
-            icy_metaint_header = response.headers.get('icy-metaint')
+            if 'icy-br' in headers:
+                bitrate = headers['icy-br'].split(",")[0]
+            else:
+                bitrate = None
+            if 'icy-metaint' in headers:
+                icy_metaint_header = headers['icy-metaint']
+            else:
+                icy_metaint_header = None
 
         if response.headers.get('Content-Type') is not None:
             contenttype = response.headers.get('Content-Type')
@@ -150,10 +164,8 @@ class streamscrobbler:
             title = re.sub("&artist=.*", "", title)
             title = re.sub("http://.*", "", title)
 
-            response.close()
             return {'song': title, 'bitrate': bitrate, 'contenttype': contenttype}
         else:
-            response.close()
             print
             "No metaint"
             return False
