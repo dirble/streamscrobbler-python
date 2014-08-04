@@ -37,7 +37,7 @@ class streamscrobbler:
         if isinstance(address, str):
             meta_interval = self.getAllData(address)
         else:
-            meta_interval = bool(0)
+            meta_interval = {"status": 0, "metadata": None}
 
         return meta_interval
 
