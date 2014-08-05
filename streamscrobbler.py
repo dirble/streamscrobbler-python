@@ -51,12 +51,19 @@ class streamscrobbler:
         request.add_header('icy-metadata', 1)
         try:
             response = urllib2.urlopen(request, timeout=6)
+            
+            if len(response.headers.dict) > 0:
+                headers = response.headers.dict
+            elif len(response.info().dict) > 0:
+                headers = response.info().dict
+            else:
+                headers = self.parse_headers(response)
+            
             if "server" in response.headers:
                 shoutcast = response.headers['server']
             elif "X-Powered-By" in response.headers:
                 shoutcast = response.headers['X-Powered-By']
             else:
-                headers = self.parse_headers(response)
                 if "icy-notice1" in headers:
                     shoutcast = headers['icy-notice1']
                     if "This stream requires" in shoutcast:
@@ -73,15 +80,15 @@ class streamscrobbler:
             elif "SHOUTcast" in shoutcast:
                 status = 1
                 if "1.9" in shoutcast:
-                    metadata = self.shoutcastCheck(response, False)
+                    metadata = self.shoutcastCheck(response, headers, False)
                 else:
-                    metadata = self.shoutcastCheck(response, False)
+                    metadata = self.shoutcastCheck(response, headers, False)
             elif "Icecast" or "137" in shoutcast:
                 status = 1
-                metadata = self.shoutcastCheck(response, True)
+                metadata = self.shoutcastCheck(response, headers, True)
             elif "StreamMachine" in shoutcast:
                 status = 1
-                metadata = self.shoutcastCheck(response, True)
+                metadata = self.shoutcastCheck(response, headers, True)
             else:
                 metadata = False
             response.close()
@@ -116,8 +123,7 @@ class streamscrobbler:
             return bool(0)
 
 
-    def shoutcastCheck(self, response, itsOld):
-        headers = response.info().dict
+    def shoutcastCheck(self, response, headers, itsOld):
         if itsOld is not True:
             if 'icy-br' in headers:
                 bitrate = headers['icy-br']
