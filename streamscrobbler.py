@@ -59,10 +59,11 @@ class streamscrobbler:
             else:
                 headers = self.parse_headers(response)
             
-            if "server" in response.headers:
-                shoutcast = response.headers['server']
-            elif "X-Powered-By" in response.headers:
-                shoutcast = response.headers['X-Powered-By']
+            
+            if "server" in headers:
+                shoutcast = headers['server']
+            elif "X-Powered-By" in headers:
+                shoutcast = headers['X-Powered-By']
             else:
                 if "icy-notice1" in headers:
                     shoutcast = headers['icy-notice1']
@@ -149,13 +150,10 @@ class streamscrobbler:
             else:
                 icy_metaint_header = None
 
-        if response.headers.get('Content-Type') is not None:
-            contenttype = response.headers.get('Content-Type')
-        elif response.headers.get('content-type') is not None:
-            contenttype = response.headers.get('content-type')
-
-        print
-        response.headers
+            if "Content-Type" in headers:
+                contenttype = headers['Content-Type']
+            elif 'content-type' in headers:
+                contenttype = headers['content-type']
 
         if icy_metaint_header is not None:
             metaint = int(icy_metaint_header)
