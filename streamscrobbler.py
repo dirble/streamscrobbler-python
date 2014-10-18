@@ -34,6 +34,7 @@ class streamscrobbler:
             address = self.checkPLS(url)
         else:
             address = url
+        
         if isinstance(address, str):
             meta_interval = self.getAllData(address)
         else:
@@ -49,18 +50,18 @@ class streamscrobbler:
         user_agent = 'iTunes/9.1.1'
         request.add_header('User-Agent', user_agent)
         request.add_header('icy-metadata', 1)
+        request.add_header('Accept-Charset', 'utf-8')
         try:
-            response = urllib2.urlopen(request, timeout=6)
+            response = urllib2.urlopen(request, timeout=4)
+            pp = pprint.PrettyPrinter(indent=4)
+            headers = self.parse_headers(response)
             if "server" in response.headers:
                 shoutcast = response.headers['server']
             elif "X-Powered-By" in response.headers:
                 shoutcast = response.headers['X-Powered-By']
             else:
-                headers = self.parse_headers(response)
                 if "icy-notice1" in headers:
-                    shoutcast = headers['icy-notice1']
-                    if "This stream requires" in shoutcast:
-                        shoutcast = headers['icy-notice2']
+                    shoutcast = headers['icy-notice2']
                 else:
                     shoutcast = bool(1)
 
@@ -70,20 +71,18 @@ class streamscrobbler:
                 else:
                     status = 0
                 metadata = False;
-            elif "SHOUTcast" in shoutcast:
+            elif 'SHOUTcast' in shoutcast:
                 status = 1
-                if "1.9" in shoutcast:
-                    metadata = self.shoutcastCheck(response, False)
-                else:
-                    metadata = self.shoutcastCheck(response, False)
-            elif "Icecast" or "137" in shoutcast:
+                metadata = self.shoutcastCheck(response,headers, False)
+            elif 'Icecast' or '137' in shoutcast:
                 status = 1
-                metadata = self.shoutcastCheck(response, True)
+                metadata = self.shoutcastCheck(response,headers, True)
             elif "StreamMachine" in shoutcast:
                 status = 1
-                metadata = self.shoutcastCheck(response, True)
+                metadata = self.shoutcastCheck(response, headers, True)
             else:
                 metadata = False
+            pp.pprint(metadata)
             response.close()
             return {"status": status, "metadata": metadata}
 
@@ -116,8 +115,7 @@ class streamscrobbler:
             return bool(0)
 
 
-    def shoutcastCheck(self, response, itsOld):
-        headers = response.info().dict
+    def shoutcastCheck(self, response, headers, itsOld):
         if itsOld is not True:
             if 'icy-br' in headers:
                 bitrate = headers['icy-br']
@@ -134,6 +132,7 @@ class streamscrobbler:
             elif 'content-type' in headers:
                 contenttype = headers['content-type']
         else:
+            headers = response.info().dict
             if 'icy-br' in headers:
                 bitrate = headers['icy-br'].split(",")[0]
             else:
@@ -158,11 +157,15 @@ class streamscrobbler:
 
             start = "StreamTitle='"
             end = "';"
-
-            title = re.search('%s(.*)%s' % (start, end), content[metaint:]).group(1)
-            title = re.sub("StreamUrl='.*?';", "", title).replace("';", "").replace("StreamUrl='", "")
-            title = re.sub("&artist=.*", "", title)
-            title = re.sub("http://.*", "", title)
+            
+            
+            try:
+                title = re.search('%s(.*)%s' % (start, end), content[metaint:]).group(1)
+                title = re.sub("StreamUrl='.*?';", "", title).replace("';", "").replace("StreamUrl='", "")
+                title = re.sub("&artist=.*", "", title)
+                title = re.sub("http://.*", "", title)
+            except Exception:
+                title = ""
 
             return {'song': title, 'bitrate': bitrate, 'contenttype': contenttype}
         else:
