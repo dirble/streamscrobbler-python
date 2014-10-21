@@ -119,6 +119,7 @@ class streamscrobbler:
         if itsOld is not True:
             if 'icy-br' in headers:
                 bitrate = headers['icy-br']
+                bitrate = bitrate.rstrip()
             else:
                 bitrate = None
 
@@ -129,8 +130,10 @@ class streamscrobbler:
 
             if "Content-Type" in headers:
                 contenttype = headers['Content-Type']
+                contenttype = contenttype.rstrip()
             elif 'content-type' in headers:
                 contenttype = headers['content-type']
+                contenttype = contenttype.rstrip()
         else:
             headers = response.info().dict
             if 'icy-br' in headers:
@@ -144,8 +147,10 @@ class streamscrobbler:
 
         if response.headers.get('Content-Type') is not None:
             contenttype = response.headers.get('Content-Type')
+            contenttype = contenttype.rstrip()
         elif response.headers.get('content-type') is not None:
             contenttype = response.headers.get('content-type')
+            contenttype = contenttype.rstrip()
 
         print
         response.headers
@@ -164,6 +169,7 @@ class streamscrobbler:
                 title = re.sub("StreamUrl='.*?';", "", title).replace("';", "").replace("StreamUrl='", "")
                 title = re.sub("&artist=.*", "", title)
                 title = re.sub("http://.*", "", title)
+                title = title.rstrip()
             except Exception:
                 title = ""
 
