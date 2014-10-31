@@ -97,6 +97,11 @@ class streamscrobbler:
         except Exception, err:
             print "    Error: " + str(err)
             return {"status": status, "metadata": None}
+        finally:
+            try:
+                response.close()
+            except NameError: 
+                pass
 
 
     def checkPLS(self, address):
@@ -111,8 +116,14 @@ class streamscrobbler:
                 return stream[6:]
             else:
                 return bool(0)
-        except Exception:
+        except Exception, err:
+            print "    Error: " + str(err)
             return bool(0)
+        finally:
+            try:
+                response.close()
+            except NameError: 
+                pass
 
 
     def shoutcastCheck(self, response, headers, itsOld):
@@ -170,7 +181,8 @@ class streamscrobbler:
                 title = re.sub("&artist=.*", "", title)
                 title = re.sub("http://.*", "", title)
                 title = title.rstrip()
-            except Exception:
+            except Exception, err:
+                print "    Error: " + str(err)
                 title = ""
 
             return {'song': title, 'bitrate': bitrate, 'contenttype': contenttype}
