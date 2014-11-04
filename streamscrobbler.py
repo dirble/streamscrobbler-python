@@ -18,7 +18,7 @@ class streamscrobbler:
                 break  # end of headers
             if ':' in line:
                 key, value = line.split(':', 1)
-                headers[key] = value
+                headers[key] = value.rstrip()
             if int == 12:
                 break;
             int = int + 1
@@ -34,11 +34,10 @@ class streamscrobbler:
             address = self.checkPLS(url)
         else:
             address = url
-        
         if isinstance(address, str):
             meta_interval = self.getAllData(address)
         else:
-            meta_interval = bool(0)
+            meta_interval = {"status": 0, "metadata": None}
 
         return meta_interval
 
@@ -50,20 +49,21 @@ class streamscrobbler:
         user_agent = 'iTunes/9.1.1'
         request.add_header('User-Agent', user_agent)
         request.add_header('icy-metadata', 1)
-        request.add_header('Accept-Charset', 'utf-8')
         try:
-            response = urllib2.urlopen(request, timeout=4)
+            response = urllib2.urlopen(request, timeout=6)
+            headers = self.getHeaders(response)
             pp = pprint.PrettyPrinter(indent=4)
-            headers = self.parse_headers(response)
-            if "server" in response.headers:
-                shoutcast = response.headers['server']
-            elif "X-Powered-By" in response.headers:
-                shoutcast = response.headers['X-Powered-By']
+            print "parse headers: "
+            pp.pprint(headers)
+                
+            if "server" in headers:
+                shoutcast = headers['server']
+            elif "X-Powered-By" in headers:
+                shoutcast = headers['X-Powered-By']
+            elif "icy-notice1" in headers:
+                shoutcast = headers['icy-notice2']
             else:
-                if "icy-notice1" in headers:
-                    shoutcast = headers['icy-notice2']
-                else:
-                    shoutcast = bool(1)
+                shoutcast = bool(1)
 
             if isinstance(shoutcast, bool):
                 if shoutcast is True:
@@ -71,18 +71,20 @@ class streamscrobbler:
                 else:
                     status = 0
                 metadata = False;
-            elif 'SHOUTcast' in shoutcast:
+            elif "SHOUTcast" in shoutcast:
                 status = 1
-                metadata = self.shoutcastCheck(response,headers, False)
-            elif 'Icecast' or '137' in shoutcast:
+                metadata = self.shoutcastCheck(response, headers, False)
+            elif "Icecast" or "137" in shoutcast:
                 status = 1
-                metadata = self.shoutcastCheck(response,headers, True)
+                metadata = self.shoutcastCheck(response, headers, True)
             elif "StreamMachine" in shoutcast:
+                status = 1
+                metadata = self.shoutcastCheck(response, headers, True)
+            elif shoutcast is not None:
                 status = 1
                 metadata = self.shoutcastCheck(response, headers, True)
             else:
                 metadata = False
-            pp.pprint(metadata)
             response.close()
             return {"status": status, "metadata": metadata}
 
@@ -97,11 +99,6 @@ class streamscrobbler:
         except Exception, err:
             print "    Error: " + str(err)
             return {"status": status, "metadata": None}
-        finally:
-            try:
-                response.close()
-            except NameError: 
-                pass
 
 
     def checkPLS(self, address):
@@ -116,14 +113,8 @@ class streamscrobbler:
                 return stream[6:]
             else:
                 return bool(0)
-        except Exception, err:
-            print "    Error: " + str(err)
+        except Exception:
             return bool(0)
-        finally:
-            try:
-                response.close()
-            except NameError: 
-                pass
 
 
     def shoutcastCheck(self, response, headers, itsOld):
@@ -141,12 +132,10 @@ class streamscrobbler:
 
             if "Content-Type" in headers:
                 contenttype = headers['Content-Type']
-                contenttype = contenttype.rstrip()
             elif 'content-type' in headers:
                 contenttype = headers['content-type']
-                contenttype = contenttype.rstrip()
+                
         else:
-            headers = response.info().dict
             if 'icy-br' in headers:
                 bitrate = headers['icy-br'].split(",")[0]
             else:
@@ -156,41 +145,51 @@ class streamscrobbler:
             else:
                 icy_metaint_header = None
 
-        if response.headers.get('Content-Type') is not None:
-            contenttype = response.headers.get('Content-Type')
-            contenttype = contenttype.rstrip()
-        elif response.headers.get('content-type') is not None:
-            contenttype = response.headers.get('content-type')
-            contenttype = contenttype.rstrip()
-
-        print
-        response.headers
+        if headers.get('Content-Type') is not None:
+            contenttype = headers.get('Content-Type')
+        elif headers.get('content-type') is not None:
+            contenttype = headers.get('content-type')
 
         if icy_metaint_header is not None:
             metaint = int(icy_metaint_header)
+            print "icy metaint: " + str(metaint)
             read_buffer = metaint + 255
             content = response.read(read_buffer)
 
             start = "StreamTitle='"
             end = "';"
-            
-            
-            try:
+
+            try: 
                 title = re.search('%s(.*)%s' % (start, end), content[metaint:]).group(1)
                 title = re.sub("StreamUrl='.*?';", "", title).replace("';", "").replace("StreamUrl='", "")
                 title = re.sub("&artist=.*", "", title)
                 title = re.sub("http://.*", "", title)
-                title = title.rstrip()
+                title.rstrip()
             except Exception, err:
-                print "    Error: " + str(err)
-                title = ""
+                print "songtitle error: " + str(err)
+                title = content[metaint:].split("'")[1]
 
-            return {'song': title, 'bitrate': bitrate, 'contenttype': contenttype}
+            return {'song': title, 'bitrate': bitrate, 'contenttype': contenttype.rstrip()}
         else:
             print
             "No metaint"
             return False
 
+    def getHeaders(self, response):
+        if self.is_empty(response.headers.dict) is False:
+            headers = response.headers.dict
+        elif hasattr(response.info(),"item") and self.is_empty(response.info().item()) is False:
+            headers = response.info().item()
+        else:
+            headers = self.parse_headers(response)
+        return headers
+
+    def is_empty(self, any_structure):
+        if any_structure:
+            return False
+        else:
+            return True
+        
 
     def stripTags(self, text):
         finished = 0
