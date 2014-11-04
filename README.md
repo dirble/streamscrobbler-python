@@ -1,12 +1,32 @@
 streamscrobbler-python
 ======================
 
-The python class used on Dirble.com to get titles and bitrates on streams.
+This python class gets the metadata and song played on a stream. The metadata is content-type (mpeg, ACC, ACC+), bitrate and played song. It has support to handling pls files directly for now. m3u support will come soon.
 
 
 ### dependencies
-streamscrobbler is mostly using urllib2, httplib and urlparse. So this need to be isntalled or you'll get errors.
+Streamscrobbler is importing this packages:
 
+* httplib2 as http
+* httplib
+* re
+* urlparse
+* pprint
+* urllib2
+
+prepare by installing them before testing this class.
+
+### Streams supported
+Supports the following streamtypes:
+
+* Shoutcast
+* Icecast
+
+And also different stream services:
+
+* Radionomy
+* Streammachine
+* tunein
 
 ### How to use it
 You use one function to get a object of status and metadata.
