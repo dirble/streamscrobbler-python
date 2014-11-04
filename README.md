@@ -5,7 +5,7 @@ This python class gets the metadata and song played on a stream. The metadata is
 
 
 ### dependencies
-Streamscrobbler is importing this packages:
+Streamscrobbler is importing these packages:
 
 * httplib2 as http
 * httplib
@@ -21,6 +21,7 @@ Supports the following streamtypes:
 
 * Shoutcast
 * Icecast
+* probably other custom made that use icy-metaint
 
 And also different stream services:
 
