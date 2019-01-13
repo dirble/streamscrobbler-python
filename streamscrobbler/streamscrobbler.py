@@ -1,34 +1,20 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import httplib2 as http
-import httplib
+import http.client
 import re
-from urlparse import urlparse
+from urllib.parse import urlparse
 import pprint
-import urllib2
+import urllib.request
+import urllib.error
+import urllib.parse
 
 
-class streamscrobbler:
-    def parse_headers(self, response):
-        headers = {}
-        int = 0
-        while True:
-            line = response.readline()
-            if line == '\r\n':
-                break  # end of headers
-            if ':' in line:
-                key, value = line.split(':', 1)
-                headers[key] = value.rstrip()
-            if int == 12:
-                break;
-            int = int + 1
-        return headers
-
+class StreamScrobbler:
 
     # this is the fucntion you should call with the url to get all data sorted as a object in the return
     def getServerInfo(self, url):
-        print
-        "shoutcast check v.2"
+        print("shoutcast check v.2")
 
         if url.endswith('.pls') or url.endswith('listen.pls?sid=1'):
             address = self.checkPLS(url)
@@ -42,20 +28,19 @@ class streamscrobbler:
         return meta_interval
 
     def getAllData(self, address):
-        shoutcast = False
         status = 0
 
-        request = urllib2.Request(address)
+        request = urllib.request.Request(address)
         user_agent = 'iTunes/9.1.1'
         request.add_header('User-Agent', user_agent)
         request.add_header('icy-metadata', 1)
         try:
-            response = urllib2.urlopen(request, timeout=6)
+            response = urllib.request.urlopen(request, timeout=6)
             headers = self.getHeaders(response)
             pp = pprint.PrettyPrinter(indent=4)
-            print "parse headers: "
+            print("parse headers: ")
             pp.pprint(headers)
-                
+
             if "server" in headers:
                 shoutcast = headers['server']
             elif "X-Powered-By" in headers:
@@ -66,11 +51,11 @@ class streamscrobbler:
                 shoutcast = bool(1)
 
             if isinstance(shoutcast, bool):
-                if shoutcast is True:
+                if shoutcast:
                     status = 1
                 else:
                     status = 0
-                metadata = False;
+                metadata = False
             elif "SHOUTcast" in shoutcast:
                 status = 1
                 metadata = self.shoutcastCheck(response, headers, False)
@@ -88,37 +73,36 @@ class streamscrobbler:
             response.close()
             return {"status": status, "metadata": metadata}
 
-        except urllib2.HTTPError, e:
-            print '    Error, HTTPError = ' + str(e.code)
+        except urllib.error.HTTPError as e:
+            print(('    Error, HTTPError = ' + str(e.code)))
             return {"status": status, "metadata": None}
 
-        except urllib2.URLError, e:
-            print "    Error, URLError: " + str(e.reason)
+        except urllib.error.URLError as e:
+            print(("    Error, URLError: " + str(e.reason)))
             return {"status": status, "metadata": None}
 
-        except Exception, err:
-            print "    Error: " + str(err)
+        except Exception as err:
+            print(("    Error: " + str(err)))
             return {"status": status, "metadata": None}
-
 
     def checkPLS(self, address):
         try:
-            response = urllib2.urlopen(address, timeout=2)
+            stream = None
+            response = urllib.request.urlopen(address, timeout=2)
             for line in response:
-                if line.startswith("File1="):
-                    stream = line;
+                if line.startswith(b"File1="):
+                    stream = line.decode()
 
             response.close()
-            if 'stream' in locals():
-                return stream[6:]
+            if stream:
+                return stream[6:].strip("\n")
             else:
                 return bool(0)
         except Exception:
             return bool(0)
 
-
-    def shoutcastCheck(self, response, headers, itsOld):
-        if itsOld is not True:
+    def shoutcastCheck(self, response, headers, is_old):
+        if not is_old:
             if 'icy-br' in headers:
                 bitrate = headers['icy-br']
                 bitrate = bitrate.rstrip()
@@ -150,9 +134,9 @@ class streamscrobbler:
         elif headers.get('content-type') is not None:
             contenttype = headers.get('content-type')
 
-        if icy_metaint_header is not None:
+        if icy_metaint_header:
             metaint = int(icy_metaint_header)
-            print "icy metaint: " + str(metaint)
+            print(("icy metaint: " + str(metaint)))
             read_buffer = metaint + 255
             content = response.read(read_buffer)
 
@@ -160,36 +144,25 @@ class streamscrobbler:
             end = "';"
 
             try: 
-                title = re.search('%s(.*)%s' % (start, end), content[metaint:]).group(1)
+                title = re.search(bytes('%s(.*)%s' % (start, end)), content[metaint:]).group(1).decode()
                 title = re.sub("StreamUrl='.*?';", "", title).replace("';", "").replace("StreamUrl='", "")
                 title = re.sub("&artist=.*", "", title)
                 title = re.sub("http://.*", "", title)
                 title.rstrip()
-            except Exception, err:
-                print "songtitle error: " + str(err)
-                title = content[metaint:].split("'")[1]
+            except Exception as err:
+                print(("songtitle error: " + str(err)))
+                title = content[metaint:].split(b"'")[1]
 
             return {'song': title, 'bitrate': bitrate, 'contenttype': contenttype.rstrip()}
         else:
-            print
-            "No metaint"
+            print("No metaint")
             return False
 
     def getHeaders(self, response):
-        if self.is_empty(response.headers.dict) is False:
-            headers = response.headers.dict
-        elif hasattr(response.info(),"item") and self.is_empty(response.info().item()) is False:
-            headers = response.info().item()
-        else:
-            headers = self.parse_headers(response)
-        return headers
-
-    def is_empty(self, any_structure):
-        if any_structure:
-            return False
-        else:
-            return True
-        
+        if response.get_headers():
+            headers = dict(response.get_headers)
+            return headers
+        return dict()
 
     def stripTags(self, text):
         finished = 0
