@@ -12,7 +12,7 @@ setup(
     author_email="confacted@gmail.com",
     url="https://github.com/Dirble/streamscrobbler-python",
     keywords=["shoutcast", "icecast", "stream", "ICY"],
-    install_requires=["httplib2"],
+    install_requires=[],
     classifiers=[],
     include_package_data=True
 )
