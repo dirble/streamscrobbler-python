@@ -7,7 +7,7 @@ import urllib.parse
 
 # this is the function you should call with the url to get all data sorted as a object in the return
 def get_server_info(url):
-    if url.endswith('.pls') or url.endswith('listen.pls?sid=1'):
+    if url.endswith(".pls") or url.endswith("listen.pls?sid=1"):
         address = check_pls(url)
     else:
         address = url
@@ -23,19 +23,19 @@ def get_all_data(address):
     status = 0
 
     request = urllib.request.Request(address)
-    user_agent = 'iTunes/9.1.1'
-    request.add_header('User-Agent', user_agent)
-    request.add_header('icy-metadata', 1)
+    user_agent = "iTunes/9.1.1"
+    request.add_header("User-Agent", user_agent)
+    request.add_header("icy-metadata", 1)
     try:
         response = urllib.request.urlopen(request, timeout=6)
         headers = dict(response.info())
 
         if "server" in headers:
-            shoutcast = headers['server']
+            shoutcast = headers["server"]
         elif "X-Powered-By" in headers:
-            shoutcast = headers['X-Powered-By']
+            shoutcast = headers["X-Powered-By"]
         elif "icy-notice1" in headers:
-            shoutcast = headers['icy-notice2']
+            shoutcast = headers["icy-notice2"]
         else:
             shoutcast = True
 
@@ -60,7 +60,7 @@ def get_all_data(address):
         return {"status": status, "metadata": metadata}
 
     except urllib.error.HTTPError as e:
-        print(('    Error, HTTPError = ' + str(e.code)))
+        print(("    Error, HTTPError = " + str(e.code)))
         return {"status": status, "metadata": None}
 
     except urllib.error.URLError as e:
@@ -93,22 +93,22 @@ def shoutcast_check(response, headers, is_old):
     bitrate = None
     contenttype = None
 
-    if 'icy-br' in headers:
+    if "icy-br" in headers:
         if is_old:
-            bitrate = headers['icy-br'].split(",")[0]
+            bitrate = headers["icy-br"].split(",")[0]
         else:
-            bitrate = headers['icy-br']
+            bitrate = headers["icy-br"]
             bitrate = bitrate.rstrip()
 
-    if 'icy-metaint' in headers:
-        icy_metaint_header = headers['icy-metaint']
+    if "icy-metaint" in headers:
+        icy_metaint_header = headers["icy-metaint"]
     else:
         icy_metaint_header = None
 
     if "Content-Type" in headers:
-        contenttype = headers['Content-Type'].rstrip()
-    elif 'content-type' in headers:
-        contenttype = headers['content-type'].rstrip()
+        contenttype = headers["Content-Type"].rstrip()
+    elif "content-type" in headers:
+        contenttype = headers["content-type"].rstrip()
 
     if icy_metaint_header:
         metaint = int(icy_metaint_header)
@@ -119,8 +119,16 @@ def shoutcast_check(response, headers, is_old):
         end = "';"
 
         try:
-            title = re.search(bytes('%s(.*)%s' % (start, end), "utf-8"), content[metaint:]).group(1).decode("utf-8")
-            title = re.sub("StreamUrl='.*?';", "", title).replace("';", "").replace("StreamUrl='", "")
+            title = (
+                re.search(bytes("%s(.*)%s" % (start, end), "utf-8"), content[metaint:])
+                .group(1)
+                .decode("utf-8")
+            )
+            title = (
+                re.sub("StreamUrl='.*?';", "", title)
+                .replace("';", "")
+                .replace("StreamUrl='", "")
+            )
             title = re.sub("&artist=.*", "", title)
             title = re.sub("http://.*", "", title)
             title.rstrip()
@@ -128,7 +136,7 @@ def shoutcast_check(response, headers, is_old):
             print(("songtitle error: " + str(err)))
             title = content[metaint:].split(b"'")[1]
 
-        return {'song': title, 'bitrate': bitrate, 'contenttype': contenttype}
+        return {"song": title, "bitrate": bitrate, "contenttype": contenttype}
     else:
         print("No metaint")
         return False
@@ -142,6 +150,6 @@ def strip_tags(text):
         if start >= 0:
             stop = text[start:].find(">")
             if stop >= 0:
-                text = text[:start] + text[start + stop + 1:]
+                text = text[:start] + text[start + stop + 1 :]
                 finished = 0
     return text
