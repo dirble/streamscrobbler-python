@@ -6,7 +6,7 @@ from setuptools import setup
 setup(
     name="streamscrobbler",
     packages=["streamscrobbler"],
-    version="0.0.2",
+    version="0.0.3",
     description="A python class used on Dirble.com to get titles and bitrates on shoutcast and icecast streams",
     author="Håkan Nylén",
     author_email="confacted@gmail.com",
