@@ -39,19 +39,13 @@ def get_all_data(address):
         else:
             shoutcast = True
 
-        if isinstance(shoutcast, bool):
-            if shoutcast:
-                status = 1
-            else:
-                status = 0
-            metadata = False
+        if isinstance(shoutcast, bool) and shoutcast:
+            status = 1
+            metadata = shoutcast_check(response, headers, True)
         elif "SHOUTcast" in shoutcast:
             status = 1
             metadata = shoutcast_check(response, headers, False)
         elif "Icecast" or "137" or "StreamMachine" in shoutcast:
-            status = 1
-            metadata = shoutcast_check(response, headers, True)
-        elif shoutcast:
             status = 1
             metadata = shoutcast_check(response, headers, True)
         else:
@@ -98,7 +92,7 @@ def shoutcast_check(response, headers, is_old):
             bitrate = headers["icy-br"].split(",")[0]
         else:
             bitrate = headers["icy-br"]
-            bitrate = bitrate.rstrip()
+        bitrate = bitrate.rstrip()
 
     if "icy-metaint" in headers:
         icy_metaint_header = headers["icy-metaint"]
